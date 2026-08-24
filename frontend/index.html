@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TicketFlow — AI Support Triage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="logo">T</span><span>TicketFlow</span></div>
+      <div class="health"><i></i><span id="healthText">Проверяем API…</span></div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">AI SUPPORT TRIAGE · POC</div>
+      <h1>Решаем простое.<br><span>Передаём важное.</span></h1>
+      <p>Система классифицирует обращение, проверяет риск и отвечает только там, где это безопасно.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="composer card">
+        <div class="card-head"><span>Новое обращение</span><span class="step">01 / АНАЛИЗ</span></div>
+        <label for="ticket">Текст тикета</label>
+        <textarea id="ticket" maxlength="5000" placeholder="Опишите проблему пользователя…">Как отменить подписку? Больше не хочу ей пользоваться.</textarea>
+        <div class="examples">
+          <button data-example="Как отменить подписку? Больше не хочу ей пользоваться.">Happy path</button>
+          <button data-example="Мой аккаунт взломали и с карты украли деньги. Срочно помогите!">Высокий риск</button>
+        </div>
+        <div class="submit-row">
+          <select id="channel" aria-label="Канал"><option value="web">Веб-форма</option><option value="chat">Чат</option><option value="email">Email</option><option value="mobile">Приложение</option></select>
+          <button class="primary" id="submit">Обработать <span>→</span></button>
+        </div>
+      </div>
+
+      <div class="result card" id="result">
+        <div class="empty">
+          <div class="radar"><div></div></div>
+          <h2>Решение появится здесь</h2>
+          <p>Отправьте тикет, чтобы увидеть классификацию, риск и выбранный маршрут.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="audit-section">
+      <div class="section-title"><div><span class="eyebrow">ПРОЗРАЧНОСТЬ</span><h2>Последние решения</h2></div><button class="ghost" id="refresh">Обновить</button></div>
+      <div class="audit-list" id="audit"><div class="audit-empty">История пока пуста</div></div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
+
