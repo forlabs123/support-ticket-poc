@@ -1,0 +1,41 @@
+@startuml
+title Обработка тикета: happy path и risky fallback
+autonumber
+actor User as U
+participant "Web UI / channel" as UI
+participant "API + Orchestrator" as O
+participant "Rule classifier" as C
+database "Knowledge base" as KB
+participant "Alice AI LLM" as LLM
+queue "Operator queue" as Q
+database "Audit log" as A
+
+U -> UI: Отправляет обращение
+UI -> O: POST /api/tickets/process
+O -> C: classify(text)
+C --> O: topic, risk, confidence, reasons
+note right of O
+  Rule-based routing входит в горячий путь
+  и должен завершаться быстрее 500 мс.
+end note
+
+alt low risk + известная тема (happy path)
+  O -> KB: find_article(topic)
+  KB --> O: проверенный ответ
+  O -> LLM: безопасно переформулировать ответ KB
+  alt LLM доступна
+    LLM --> O: улучшенный ответ
+  else timeout / ошибка / нет ключа
+    LLM --x O: ошибка
+    O -> O: fallback на исходный ответ KB
+  end
+  O -> A: решение + источник + timings
+  O --> UI: status=answered, answer
+  UI --> U: Автоматический ответ
+else medium/high risk или неизвестная тема (fallback)
+  O -> Q: эскалировать без автоответа
+  O -> A: решение + причины + очередь
+  O --> UI: status=escalated, operator_queue
+  UI --> U: Принято оператором
+end
+@enduml
