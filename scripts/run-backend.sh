@@ -13,7 +13,6 @@ elif [[ -f "$DEV_ENV" ]]; then
 fi
 set +a
 
-export YANDEX_FOLDER_ID="${YANDEX_FOLDER_ID:-b1g9ur071noccu5k2nul}"
 export YANDEX_MODEL="${YANDEX_MODEL:-aliceai-llm}"
 
 cd "$PROJECT_DIR"
