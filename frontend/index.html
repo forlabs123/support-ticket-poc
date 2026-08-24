@@ -3,55 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TicketFlow — AI Support Triage</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>TicketFlow PoC</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="shell">
-    <header>
-      <div class="brand"><span class="logo">T</span><span>TicketFlow</span></div>
-      <div class="health"><i></i><span id="healthText">Проверяем API…</span></div>
-    </header>
+  <main>
+    <h1>TicketFlow PoC</h1>
+    <p class="description">Демонстрация классификации, безопасного автоответа и эскалации тикетов.</p>
+    <p id="health" class="status">Проверяем backend…</p>
 
-    <section class="hero">
-      <div class="eyebrow">AI SUPPORT TRIAGE · POC</div>
-      <h1>Решаем простое.<br><span>Передаём важное.</span></h1>
-      <p>Система классифицирует обращение, проверяет риск и отвечает только там, где это безопасно.</p>
-    </section>
+    <section>
+      <h2>Тестовый тикет</h2>
+      <label for="ticket">Текст обращения</label>
+      <textarea id="ticket" maxlength="5000">Как отменить подписку? Больше не хочу ей пользоваться.</textarea>
 
-    <section class="workspace">
-      <div class="composer card">
-        <div class="card-head"><span>Новое обращение</span><span class="step">01 / АНАЛИЗ</span></div>
-        <label for="ticket">Текст тикета</label>
-        <textarea id="ticket" maxlength="5000" placeholder="Опишите проблему пользователя…">Как отменить подписку? Больше не хочу ей пользоваться.</textarea>
-        <div class="examples">
-          <button data-example="Как отменить подписку? Больше не хочу ей пользоваться.">Happy path</button>
-          <button data-example="Мой аккаунт взломали и с карты украли деньги. Срочно помогите!">Высокий риск</button>
-        </div>
-        <div class="submit-row">
-          <select id="channel" aria-label="Канал"><option value="web">Веб-форма</option><option value="chat">Чат</option><option value="email">Email</option><option value="mobile">Приложение</option></select>
-          <button class="primary" id="submit">Обработать <span>→</span></button>
-        </div>
+      <div class="examples">
+        <button type="button" data-example="Как отменить подписку? Больше не хочу ей пользоваться.">Пример: низкий риск</button>
+        <button type="button" data-example="Мой аккаунт взломали и с карты украли деньги. Срочно помогите!">Пример: высокий риск</button>
       </div>
 
-      <div class="result card" id="result">
-        <div class="empty">
-          <div class="radar"><div></div></div>
-          <h2>Решение появится здесь</h2>
-          <p>Отправьте тикет, чтобы увидеть классификацию, риск и выбранный маршрут.</p>
-        </div>
-      </div>
+      <label for="channel">Канал</label>
+      <select id="channel">
+        <option value="web">Веб-форма</option>
+        <option value="chat">Чат</option>
+        <option value="email">Email</option>
+        <option value="mobile">Приложение</option>
+      </select>
+      <button type="button" id="submit" class="primary">Обработать тикет</button>
     </section>
 
-    <section class="audit-section">
-      <div class="section-title"><div><span class="eyebrow">ПРОЗРАЧНОСТЬ</span><h2>Последние решения</h2></div><button class="ghost" id="refresh">Обновить</button></div>
-      <div class="audit-list" id="audit"><div class="audit-empty">История пока пуста</div></div>
+    <section>
+      <h2>Результат</h2>
+      <div id="result" class="result muted">Отправьте тикет для демонстрации сценария.</div>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>Журнал решений</h2>
+        <button type="button" id="refresh">Обновить</button>
+      </div>
+      <p class="muted">Последние записи аудита из backend.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Тикет</th><th>Тема</th><th>Риск</th><th>Решение</th><th>Время</th></tr></thead>
+          <tbody id="audit"><tr><td colspan="5" class="muted">Загрузка…</td></tr></tbody>
+        </table>
+      </div>
     </section>
   </main>
   <script src="app.js"></script>
 </body>
 </html>
-

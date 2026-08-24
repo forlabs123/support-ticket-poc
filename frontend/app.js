@@ -1,52 +1,102 @@
 const API = 'http://localhost:8000';
-const $ = (id) => document.getElementById(id);
-
-document.querySelectorAll('[data-example]').forEach((button) => {
-  button.addEventListener('click', () => { $('ticket').value = button.dataset.example; });
-});
+const byId = (id) => document.getElementById(id);
 
 function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  return String(value ?? '').replace(/[&<>'"]/g, (char) => (
+    {'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[char]
+  ));
 }
 
+document.querySelectorAll('[data-example]').forEach((button) => {
+  button.addEventListener('click', () => { byId('ticket').value = button.dataset.example; });
+});
+
 async function checkHealth() {
+  const status = byId('health');
   try {
     const response = await fetch(`${API}/api/health`);
+    if (!response.ok) throw new Error();
     const data = await response.json();
-    document.querySelector('.health').classList.add('ok');
-    $('healthText').textContent = data.llm_configured ? 'API · Alice AI LLM подключена' : 'API · безопасный fallback';
-  } catch { $('healthText').textContent = 'API недоступен'; }
+    status.className = 'status ok';
+    status.textContent = data.llm_configured
+      ? 'Backend доступен, Alice AI LLM настроена.'
+      : 'Backend доступен, будет использован безопасный fallback.';
+  } catch {
+    status.className = 'status error';
+    status.textContent = 'Backend недоступен. Запустите ./scripts/run-backend.sh';
+  }
 }
 
 function renderResult(data) {
-  const risk = data.classification.risk;
   const answered = data.status === 'answered';
-  $('result').innerHTML = `<div class="result-content">
-    <div class="decision-top"><div><span class="eyebrow">${answered ? 'АВТООТВЕТ' : 'ЭСКАЛАЦИЯ'}</span><h2>${answered ? 'Можно ответить' : 'Нужен оператор'}</h2></div><span class="badge ${risk}">${risk} risk</span></div>
-    <div class="facts"><div class="fact"><small>Тема</small><strong>${escapeHtml(data.classification.topic)}</strong></div><div class="fact"><small>Уверенность</small><strong>${Math.round(data.classification.confidence * 100)}%</strong></div><div class="fact"><small>Маршрут</small><strong>${data.routing_ms} мс</strong></div></div>
-    <div class="answer ${answered ? '' : 'escalated'}">${answered ? escapeHtml(data.answer) : `Автоответ заблокирован. Тикет направлен в очередь <b>${escapeHtml(data.operator_queue)}</b>.`}</div>
-    <div class="source">${answered ? `Источник: ${escapeHtml(data.answer_source)} · ${escapeHtml(data.knowledge_article)}` : `Причина: ${escapeHtml(data.classification.reasons.join(', '))}`} · ${escapeHtml(data.ticket_id)}</div>
-  </div>`;
-}
+  const decision = answered
+    ? escapeHtml(data.answer)
+    : `Автоответ запрещён. Тикет передан в очередь <strong>${escapeHtml(data.operator_queue)}</strong>.`;
 
-$('submit').addEventListener('click', async () => {
-  const text = $('ticket').value.trim();
-  if (text.length < 3) return;
-  $('submit').disabled = true; $('submit').textContent = 'Анализируем…';
-  try {
-    const response = await fetch(`${API}/api/tickets/process`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, channel:$('channel').value})});
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    renderResult(await response.json()); await loadAudit();
-  } catch (error) { $('result').innerHTML = `<div class="empty"><h2>Не удалось обработать</h2><p>${escapeHtml(error.message)}. Проверьте, запущен ли backend.</p></div>`; }
-  finally { $('submit').disabled = false; $('submit').innerHTML = 'Обработать <span>→</span>'; }
-});
+  byId('result').className = 'result';
+  byId('result').innerHTML = `
+    <dl>
+      <dt>ID тикета</dt><dd>${escapeHtml(data.ticket_id)}</dd>
+      <dt>Тема</dt><dd>${escapeHtml(data.classification.topic)}</dd>
+      <dt>Риск</dt><dd class="risk-${escapeHtml(data.classification.risk)}">${escapeHtml(data.classification.risk)}</dd>
+      <dt>Уверенность</dt><dd>${Math.round(data.classification.confidence * 100)}%</dd>
+      <dt>Маршрутизация</dt><dd>${data.routing_ms} мс</dd>
+      <dt>Статус</dt><dd>${escapeHtml(data.status)}</dd>
+    </dl>
+    <div class="answer ${answered ? '' : 'escalated'}">${decision}</div>
+    ${answered ? `<p class="muted">Источник: ${escapeHtml(data.answer_source)} · ${escapeHtml(data.knowledge_article)}</p>` : ''}
+  `;
+}
 
 async function loadAudit() {
+  const body = byId('audit');
   try {
-    const data = await (await fetch(`${API}/api/audit?limit=8`)).json();
-    $('audit').innerHTML = data.items.length ? data.items.map((item) => `<div class="audit-item"><strong>${escapeHtml(item.ticket_id)}</strong><span>${escapeHtml(item.classification.topic)}</span><span class="badge ${item.classification.risk}">${item.classification.risk}</span><span>${item.routing_ms} мс</span></div>`).join('') : '<div class="audit-empty">История пока пуста</div>';
-  } catch { $('audit').innerHTML = '<div class="audit-empty">Журнал недоступен</div>'; }
+    const response = await fetch(`${API}/api/audit?limit=10`);
+    if (!response.ok) throw new Error();
+    const data = await response.json();
+    body.innerHTML = data.items.length
+      ? data.items.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.ticket_id)}</td>
+          <td>${escapeHtml(item.classification.topic)}</td>
+          <td class="risk-${escapeHtml(item.classification.risk)}">${escapeHtml(item.classification.risk)}</td>
+          <td>${item.status === 'answered' ? 'автоответ' : `оператор: ${escapeHtml(item.operator_queue)}`}</td>
+          <td>${item.routing_ms} мс</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="muted">Журнал пока пуст.</td></tr>';
+  } catch {
+    body.innerHTML = '<tr><td colspan="5" class="risk-high">Журнал недоступен.</td></tr>';
+  }
 }
 
-$('refresh').addEventListener('click', loadAudit);
-checkHealth(); loadAudit();
+byId('submit').addEventListener('click', async () => {
+  const text = byId('ticket').value.trim();
+  if (text.length < 3) {
+    byId('result').textContent = 'Введите текст обращения.';
+    return;
+  }
+
+  const button = byId('submit');
+  button.disabled = true;
+  button.textContent = 'Обработка…';
+  try {
+    const response = await fetch(`${API}/api/tickets/process`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text, channel: byId('channel').value}),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    renderResult(await response.json());
+    await loadAudit();
+  } catch (error) {
+    byId('result').className = 'result status error';
+    byId('result').textContent = `Ошибка: ${error.message}. Проверьте backend.`;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Обработать тикет';
+  }
+});
+
+checkHealth();
+loadAudit();
+byId('refresh').addEventListener('click', loadAudit);
